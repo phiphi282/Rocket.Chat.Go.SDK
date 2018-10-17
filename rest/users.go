@@ -2,7 +2,7 @@ package rest
 
 import (
 	"bytes"
-	"net/url"
+	"encoding/json"
 
 	"github.com/RocketChat/Rocket.Chat.Go.SDK/models"
 )
@@ -36,8 +36,12 @@ func (c *Client) Login(credentials *models.UserCredentials) error {
 	}
 
 	response := new(logonResponse)
-	data := url.Values{"username": {credentials.Email}, "password": {credentials.Password}}
-	if err := c.Post("login", bytes.NewBufferString(data.Encode()), response); err != nil {
+	data, err := json.Marshal(map[string]string{"username":credentials.Email,"password":credentials.Password})
+	if err != nil {
+		return err
+	}
+
+	if err = c.Post("login", bytes.NewBuffer(data), response); err != nil {
 		return err
 	}
 
