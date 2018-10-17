@@ -36,7 +36,7 @@ func (c *Client) Login(credentials *models.UserCredentials) error {
 	}
 
 	response := new(logonResponse)
-	data := url.Values{"user": {credentials.Email}, "password": {credentials.Password}}
+	data := url.Values{"username": {credentials.Email}, "password": {credentials.Password}}
 	if err := c.Post("login", bytes.NewBufferString(data.Encode()), response); err != nil {
 		return err
 	}
