@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs"
-	"github.com/RocketChat/Rocket.Chat.Go.SDK/models"
+	"github.com/phiphi282/Rocket.Chat.Go.SDK/models"
 	"github.com/gopackage/ddp"
 )
 
@@ -35,9 +35,24 @@ func (c *Client) LoadHistory(roomId string) error {
 //
 // https://rocket.chat/docs/developer-guides/realtime-api/method-calls/send-message
 func (c *Client) SendMessage(channel *models.Channel, text string) (*models.Message, error) {
+	// Get roomID from direct Channel if the message came from there
+	roomID := channel.ID
+	if channel.Type == "d" {
+		direct := models.Method {
+			Message: models.Message{Msg:"method", ID:c.newRandomId()},
+			ServiceMethod: "createDirectMessage",
+			Args: []interface{}{channel.User.UserName},
+		}
+		rawResponse, err := c.ddp.Call("createDirectMessage", direct)
+		if err != nil {
+			return nil, err
+		}
+		roomID = rawResponse.(map[string]interface{})["results"].(map[string]interface{})["rid"].(string)
+	}
+
 	m := models.Message{
 		ID:     c.newRandomId(),
-		RoomID: channel.ID,
+		RoomID: roomID,
 		Msg:    text,
 	}
 
@@ -166,6 +181,17 @@ func (c *Client) SubscribeToMessageStream(channel *models.Channel, msgChannel ch
 
 	//msgChannel := make(chan models.Message, default_buffer_size)
 	c.ddp.CollectionByName("stream-room-messages").AddUpdateListener(messageExtractor{msgChannel, "update"})
+
+	return nil
+}
+
+func (c *Client) SubscribeToUserMessages(user string, event string, msgChannel chan models.Message) error {
+
+	if err := c.ddp.Sub("stream-notify-user", user + "/" + event, send_added_event);err != nil {
+		return err
+	}
+
+	c.ddp.CollectionByName("stream-notify-user").AddUpdateListener(messageExtractor{msgChannel, "update"})
 
 	return nil
 }

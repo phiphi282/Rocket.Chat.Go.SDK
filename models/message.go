@@ -24,6 +24,12 @@ type Message struct {
 	// SandstormSessionID interface{} `json:"sandstormSessionId"`
 }
 
+type Method struct {
+	Message
+	ServiceMethod string        `json:"method"`
+	Args []interface{} `json:"params"`
+}
+
 // PostMessage Payload for postmessage rest API
 //
 // https://rocket.chat/docs/developer-guides/rest-api/chat/postmessage/
